@@ -1,3 +1,5 @@
+/*Copyright (C) 2019 EricWu <skynocover@gmail.com> 
+See COPYING for license details.*/
 package main
 
 import (
@@ -86,11 +88,11 @@ func main() {
 
 //確認網址是否正確
 func websiteCheck(input string) bool {
-	if strings.Contains(input, "index") { //確認網域不在首頁	
+	if strings.Contains(input, "index") { //確認網域不在首頁
 		return false
-	} else if strings.HasPrefix(input, "https://aqua.komica.org/") {//確認網域是否可行
+	} else if strings.HasPrefix(input, "https://aqua.komica.org/") { //確認網域是否可行
 		return true
-	}else {
+	} else {
 		return false
 	}
 }
@@ -115,32 +117,12 @@ func htmlInput() {
 	}
 }
 
-/*
-//將streamname放入select內
-func selectInput() {
-	ui.Eval(`var op = document.getElementById("select")`)
-	ui.Eval(`op.options.length=0`) //將select初始化
-	for i := 0; i < len(streamname); i++ { //逐一將討論串名稱放入select
-		//op[i] = new Option(text,value)
-		ui.Eval(`op[` + strconv.Itoa(i) + `] = new Option("` + streamname[i] + `","` + strconv.Itoa(i) + `")`)
-	}
-}*/
-
 //重新確認每個討論串
 func refresh() {
-	/*
-		temp := replynum //將現有的陣列放入暫存
-		replynum = nil
-		for i := 0; i < len(temp); i++ {
-			replynum = append(replynum, strings.Count(Gethtml(website[i]), "<div class=\"post reply\""))
-			if temp[i] < replynum[i] {
-				ui.Eval(`document.getElementById("reply` + strconv.Itoa(i) + `").innerHTML =  "有` + strconv.Itoa(replynum[i]-temp[i]) + `個新回應"`)
-			}
-		}*/
 	for i := 0; i < len(replynum); i++ {
 		temp := strings.Count(Gethtml(website[i]), "<div class=\"post reply\"") //確認現在的回應數
 		if temp > replynum[i] {                                                 //若比現在的大則更新
-			ui.Eval(`document.getElementById("reply` + strconv.Itoa(i) + `").innerHTML =  "有` + strconv.Itoa(replynum[i]-temp) + `個新回應"`)
+			ui.Eval(`document.getElementById("reply` + strconv.Itoa(i) + `").innerHTML =  "有` + strconv.Itoa(temp-replynum[i]) + `個新回應"`)
 			replynum[i] = temp
 		}
 	}

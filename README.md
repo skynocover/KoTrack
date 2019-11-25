@@ -1,8 +1,29 @@
-# KoTrack
+# KoTrack 
 
+## From
+- Use the golang package [lorca](https://github.com/zserge/lorca)
+- UI(html) from [html5+](https://html5up.net)
+
+## How to use 
+- Add a stream
+![](./example/add.gif)
+- Del a stream
+![](./example/del.gif)
+
+## note
+- 目前只有"https://aqua.komica.org/"網域開頭的才能使用
+- 所有的資料都儲存於"./file/setting"內,有任何錯誤先刪掉後重新啟動程式
+- 更新討論串回應數的動作只會發生在開啟程式的時候
+
+# Version
 ## Unlease
 - 討論串被刪掉回報
-
+## [1.0.1] 2019-11-25
+### ADD 
+- 新增了license
+- 為README新增了example
+### FIX
+- 修復了更新回應數會有的計算錯誤
 ## [1.0.0] 2019-11-24
 - 基本功能完成
 - 資訊科學,影視版等 https://aqua.komica.org/ 網域的討論版可以使用
