@@ -1,4 +1,4 @@
-/*Copyright (C) 2019 EricWu <skynocover@gmail.com> 
+/*Copyright (C) 2019 EricWu <skynocover@gmail.com>
 See COPYING for license details.*/
 package main
 
@@ -22,12 +22,15 @@ var (
 	inputlabel     = "標題"
 	bottonname     = "按鈕名稱"
 	vieweight  int = 1000
-	viewheight int = 750
+	viewheight int = 820
 
 	ui, err             = lorca.New("", "", vieweight, viewheight)
 	streamname []string //追串的名稱陣列
 	website    []string //追串的網址陣列
 	replynum   []int    //追串的回應數陣列
+
+	webs = []string{"https://aqua.komica.org/04/pixmicat", "https://luna.komica.org/12/pixmicat.php", "https://sora.komica.org/00/pixmicat",
+		"http://gzone-anime.info/UnitedSites/academic/pixmicat", "https://alleyneblade.mymoe.moe/queensblade/", "https://2cat.komica.org/~tedc21thc/new/pixmicat", "https://2cat.komica.org/~tedc21thc/live/pixmicat"}
 )
 
 func main() {
@@ -50,47 +53,74 @@ func main() {
 			ui.Eval(`window.alert("網址無法使用,非正確版面") `)
 			ui.Eval(`document.getElementById("input").value = ""`)
 		} else {
-			html := Gethtml(input)                                                        //抓出html
-			streamname = append(streamname, catch(html, "\"title\">", "</span"))          //將討論串標題放入陣列
-			replynum = append(replynum, strings.Count(html, "<div class=\"post reply\"")) //將討論串回覆數放入陣列
-			website = append(website, input)                                              //將網址放入陣列
-			htmlInput()                                                                   //將內容陣列放入html
-			//selectInput() //將標題陣列放入到select
-			save()
+			html := Gethtml(input) //抓出輸入網址的html
+			websiteSwitch(input, html)
+			htmlInput() //將討論串標題與回覆放入頁面
+			save()      //儲存陣列到setting
 			ui.Eval(`document.getElementById("input").value = ""`)
 		}
 	})
 	ui.Bind("del", func(selected string) {
-		sel, _ := strconv.Atoi(selected)           //選擇的index
-		for i := sel; i < len(streamname)-1; i++ { //從選擇的那一個index開始每一個往前一個移動
-			streamname[i] = streamname[i+1]
-			website[i] = website[i+1]
-			replynum[i] = replynum[i+1]
+		sel, err := strconv.Atoi(selected) //選擇的index
+		if err != nil {
+			ui.Eval(`window.alert("未選擇討論串") `) //接起err防止程式崩潰
+		} else {
+			for i := sel; i < len(streamname)-1; i++ { //從選擇的那一個index開始每一個往前一個移動
+				streamname[i] = streamname[i+1]
+				website[i] = website[i+1]
+				replynum[i] = replynum[i+1]
+			}
+			//將所有陣列的長度-1
+			arr := streamname[0 : len(streamname)-1]
+			streamname = arr
+			arr = website[0 : len(website)-1]
+			website = arr
+			arrtemp := replynum[0 : len(replynum)-1]
+			replynum = arrtemp
+			htmlInput() //將陣列放入html
+			//selectInput() //將標題放入到select
+			initial(len(streamname), 6) //從現有陣列長度開始初始化
+			save()
 		}
-		//將所有陣列的長度-1
-		arr := streamname[0 : len(streamname)-1]
-		streamname = arr
-		arr = website[0 : len(website)-1]
-		website = arr
-		arrtemp := replynum[0 : len(replynum)-1]
-		replynum = arrtemp
-		htmlInput() //將陣列放入html
-		//selectInput() //將標題放入到select
-		initial(len(streamname), 6) //從現有陣列長度開始初始化
-		save()
 	})
 	ui.Bind("go", func(selected string) {
-		sel, _ := strconv.Atoi(selected)
-		openbrowser(website[sel])
+		sel, err := strconv.Atoi(selected)
+		if err != nil { //通常發生於沒有討論串的時候
+			ui.Eval(`window.alert("未選擇討論串") `) //接起err防止程式崩潰
+		} else {
+			openbrowser(website[sel])
+		}
 	})
 	<-ui.Done()
 }
+func websiteSwitch(web, html string) {
+	var k int = 0
+	for i := 0; i < len(webs); i++ {
+		if strings.HasPrefix(web, webs[i]) {
+			k = i
+		}
+	}
+	switch k {
+	case 0, 1, 2:
+		streamname = append(streamname, catch(html, "<span class=\"title\">", "</span")) //將討論串標題放入陣列
+		replynum = append(replynum, strings.Count(html, "<div class=\"post reply\""))    //將討論串回覆數放入陣列
+		website = append(website, web)                                                   //將網址放入陣列
+	case 3, 4, 5, 6:
+		streamname = append(streamname, catch(html, "<span class=\"title\">", "</span")) //將討論串標題放入陣列
+		replynum = append(replynum, strings.Count(html, "<div class=\"reply\""))         //將討論串回覆數放入陣列
+		website = append(website, web)                                                   //將網址放入陣列
+	}
+}
 
 //確認網址是否正確
-func websiteCheck(input string) bool {
-	if strings.Contains(input, "index") { //確認網域不在首頁
-		return false
-	} else if strings.HasPrefix(input, "https://aqua.komica.org/") { //確認網域是否可行
+func websiteCheck(web string) bool {
+	var k int = 99
+	for i := 0; i < len(webs); i++ {
+		if strings.HasPrefix(web, webs[i]) {
+			k = i
+		}
+	}
+	if k != 99 {
 		return true
 	} else {
 		return false
@@ -106,14 +136,14 @@ func initial(str int, end int) {
 	}
 }
 
-//將陣列放入html內
+//將陣列放入頁面內
 func htmlInput() {
 	ui.Eval(`var op = document.getElementById("select")`)
 	ui.Eval(`op.options.length=0`) //將select初始化
 	for i := 0; i < len(streamname); i++ {
-		ui.Eval(`document.getElementById("title` + strconv.Itoa(i) + `").innerHTML = "` + streamname[i] + `"`)
-		ui.Eval(`document.getElementById("reply` + strconv.Itoa(i) + `").innerHTML =  "回應數` + strconv.Itoa(replynum[i]) + `"`)
-		ui.Eval(`op[` + strconv.Itoa(i) + `] = new Option("` + streamname[i] + `","` + strconv.Itoa(i) + `")`)
+		ui.Eval(`document.getElementById("title` + strconv.Itoa(i) + `").innerHTML = "` + streamname[i] + `"`)                 //放入標題
+		ui.Eval(`document.getElementById("reply` + strconv.Itoa(i) + `").innerHTML =  "回應數` + strconv.Itoa(replynum[i]) + `"`) //放入回覆數
+		ui.Eval(`op[` + strconv.Itoa(i) + `] = new Option("` + streamname[i] + `","` + strconv.Itoa(i) + `")`)                 //放入選擇討論串
 	}
 }
 
