@@ -29,8 +29,8 @@ var (
 	website    []string //追串的網址陣列
 	replynum   []int    //追串的回應數陣列
 
-	webs = []string{"https://aqua.komica.org/04/pixmicat", "https://luna.komica.org/12/pixmicat.php", "https://sora.komica.org/00/pixmicat",
-		"http://gzone-anime.info/UnitedSites/academic/pixmicat", "https://alleyneblade.mymoe.moe/queensblade/", "https://2cat.komica.org/~tedc21thc/new/pixmicat", "https://2cat.komica.org/~tedc21thc/live/pixmicat"}
+	webs = [][]string{{"https://aqua.komica.org/04/pixmicat", "https://luna.komica.org/12/pixmicat.php", "https://sora.komica.org/00/pixmicat", "https://aqua.komica.org/cs/pixmicat."},
+		{"http://gzone-anime.info/UnitedSites/academic/pixmicat", "https://alleyneblade.mymoe.moe/queensblade/", "https://2cat.komica.org/~tedc21thc/new/pixmicat", "https://2cat.komica.org/~tedc21thc/live/pixmicat", "https://2cat.komica.org/~kirur/orz/pixmicat"}}
 )
 
 func main() {
@@ -49,7 +49,7 @@ func main() {
 		if len(streamname) == 6 { //若此刻討論串數量以達到6
 			ui.Eval(`window.alert("討論串數量超過上限") `)
 			ui.Eval(`document.getElementById("input").value = ""`)
-		} else if websiteCheck(input) == false { //確認網址是否是符合的版面
+		} else if websiteCheck(input) == 99 { //確認網址是否是符合的版面
 			ui.Eval(`window.alert("網址無法使用,非正確版面") `)
 			ui.Eval(`document.getElementById("input").value = ""`)
 		} else {
@@ -94,37 +94,31 @@ func main() {
 	<-ui.Done()
 }
 func websiteSwitch(web, html string) {
-	var k int = 0
-	for i := 0; i < len(webs); i++ {
-		if strings.HasPrefix(web, webs[i]) {
-			k = i
-		}
-	}
+	k := websiteCheck(web)
 	switch k {
-	case 0, 1, 2:
-		streamname = append(streamname, catch(html, "<span class=\"title\">", "</span")) //將討論串標題放入陣列
+	case 0:
+		test := catch(html, "<div class=\"thread\"", "<div class=\"post reply\"")
+		streamname = append(streamname, catch(test, "<span class=\"title\">", "</span")) //將討論串標題放入陣列
 		replynum = append(replynum, strings.Count(html, "<div class=\"post reply\""))    //將討論串回覆數放入陣列
 		website = append(website, web)                                                   //將網址放入陣列
-	case 3, 4, 5, 6:
-		streamname = append(streamname, catch(html, "<span class=\"title\">", "</span")) //將討論串標題放入陣列
-		replynum = append(replynum, strings.Count(html, "<div class=\"reply\""))         //將討論串回覆數放入陣列
-		website = append(website, web)                                                   //將網址放入陣列
+	case 1:
+		test := catch(html, "<div class=\"threadpost\"", "<div class=\"reply\"")
+		streamname = append(streamname, catch(test, "<span class=\"title\">", "</span>")) //將討論串標題放入陣列
+		replynum = append(replynum, strings.Count(html, "<div class=\"reply\""))          //將討論串回覆數放入陣列
+		website = append(website, web)                                                    //將網址放入陣列
 	}
 }
 
 //確認網址是否正確
-func websiteCheck(web string) bool {
-	var k int = 99
-	for i := 0; i < len(webs); i++ {
-		if strings.HasPrefix(web, webs[i]) {
-			k = i
+func websiteCheck(web string) int {
+	for i, value := range webs {
+		for j, _ := range value {
+			if strings.HasPrefix(web, webs[i][j]) {
+				return i
+			}
 		}
 	}
-	if k != 99 {
-		return true
-	} else {
-		return false
-	}
+	return 99
 }
 
 //初始化streamname以及replynum
@@ -150,9 +144,19 @@ func htmlInput() {
 //重新確認每個討論串
 func refresh() {
 	for i := 0; i < len(replynum); i++ {
-		temp := strings.Count(Gethtml(website[i]), "<div class=\"post reply\"") //確認現在的回應數
-		if temp > replynum[i] {                                                 //若比現在的大則更新
+		k := websiteCheck(website[i])
+		temp := 0
+		switch k {
+		case 0:
+			temp = strings.Count(Gethtml(website[i]), "<div class=\"post reply\"") //確認現在的回應數
+		case 1:
+			temp = strings.Count(Gethtml(website[i]), "<div class=\"reply\"") //確認現在的回應數
+		}
+		if temp > replynum[i] { //若比現在的大則更新
 			ui.Eval(`document.getElementById("reply` + strconv.Itoa(i) + `").innerHTML =  "有` + strconv.Itoa(temp-replynum[i]) + `個新回應"`)
+			replynum[i] = temp
+		} else if temp == 0 {
+			ui.Eval(`document.getElementById("reply` + strconv.Itoa(i) + `").innerHTML =  "討論串被刪除"`)
 			replynum[i] = temp
 		}
 	}
