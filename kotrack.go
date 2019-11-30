@@ -29,8 +29,8 @@ var (
 	website    []string //追串的網址陣列
 	replynum   []int    //追串的回應數陣列
 
-	webs = [][]string{{"https://aqua.komica.org/04/pixmicat", "https://luna.komica.org/12/pixmicat.php", "https://sora.komica.org/00/pixmicat", "https://aqua.komica.org/cs/pixmicat."},
-		{"http://gzone-anime.info/UnitedSites/academic/pixmicat", "https://alleyneblade.mymoe.moe/queensblade/", "https://2cat.komica.org/~tedc21thc/new/pixmicat", "https://2cat.komica.org/~tedc21thc/live/pixmicat", "https://2cat.komica.org/~kirur/orz/pixmicat"}}
+	webs = [][]string{{"aqua.komica.org/04/pixmicat", "luna.komica.org/12/pixmicat.php", "sora.komica.org/00/pixmicat", "aqua.komica.org/cs/pixmicat."},
+		{"gzone-anime.info/UnitedSites/academic/pixmicat", "alleyneblade.mymoe.moe/queensblade/", "2cat.komica.org/~tedc21thc/new/pixmicat", "2cat.komica.org/~tedc21thc/live/pixmicat", "2cat.komica.org/~kirur/orz/pixmicat"}}
 )
 
 func main() {
@@ -113,7 +113,7 @@ func websiteSwitch(web, html string) {
 func websiteCheck(web string) int {
 	for i, value := range webs {
 		for j, _ := range value {
-			if strings.HasPrefix(web, webs[i][j]) {
+			if strings.Contains(web, webs[i][j]) {
 				return i
 			}
 		}
@@ -137,7 +137,8 @@ func htmlInput() {
 	for i := 0; i < len(streamname); i++ {
 		ui.Eval(`document.getElementById("title` + strconv.Itoa(i) + `").innerHTML = "` + streamname[i] + `"`)                 //放入標題
 		ui.Eval(`document.getElementById("reply` + strconv.Itoa(i) + `").innerHTML =  "回應數` + strconv.Itoa(replynum[i]) + `"`) //放入回覆數
-		ui.Eval(`op[` + strconv.Itoa(i) + `] = new Option("` + streamname[i] + `","` + strconv.Itoa(i) + `")`)                 //放入選擇討論串
+
+		ui.Eval(`op[` + strconv.Itoa(i) + `] = new Option("` + streamname[i] + `","` + strconv.Itoa(i) + `")`) //放入選擇討論串
 	}
 }
 
@@ -154,6 +155,7 @@ func refresh() {
 		}
 		if temp > replynum[i] { //若比現在的大則更新
 			ui.Eval(`document.getElementById("reply` + strconv.Itoa(i) + `").innerHTML =  "有` + strconv.Itoa(temp-replynum[i]) + `個新回應"`)
+			//ui.Eval(`document.getElementById("reply` + strconv.Itoa(i) + `").style.color = "red"`) //放入回覆數
 			replynum[i] = temp
 		} else if temp == 0 {
 			ui.Eval(`document.getElementById("reply` + strconv.Itoa(i) + `").innerHTML =  "討論串被刪除"`)
